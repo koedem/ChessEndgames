@@ -88,7 +88,6 @@ public:
         }
 
         // decide on one representative of the four possible orientations
-        return std::min(small_key, rot_key);
         return std::min(std::min(small_key, flip_key), std::min(rot_key, rot_flip_key));
     }
 
