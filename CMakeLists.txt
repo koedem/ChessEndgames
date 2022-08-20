@@ -3,4 +3,10 @@ project(ChessEndgames)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(ChessEndgames main.cpp PawnBoard.h)
+# Process Abseil's CMake build system
+add_subdirectory(abseil-cpp)
+
+add_executable(ChessEndgames main.cpp PawnBoard.h TranspositionTable.h)
+
+# Declare dependency on the absl::strings library
+target_link_libraries(ChessEndgames absl::flat_hash_map)

@@ -2,12 +2,15 @@
 #include <array>
 #include <unordered_set>
 #include "PawnBoard.h"
+#include "TranspositionTable.h"
 
 PawnBoard board;
 
 std::array<std::array<uint32_t , 25>, 100> moves_per_depth;
 
 std::vector<std::array<uint64_t, 4>> fake_hash_table;
+
+TranspositionTable tt;
 
 int temp_best_move;
 
@@ -16,6 +19,22 @@ void find_hash(uint64_t white, uint64_t black, uint64_t depth) {
         if (entry[0] == white && entry[1] == black && entry[2] == depth) {
             std::cout << entry[3] << std::endl;
             break;
+        }
+    }
+}
+
+template<bool WHITE>
+void hashPerft(int depth) {
+    if (!tt.isPresent(board.hashkey(), WHITE, depth)) {
+        board.generate_moves<WHITE>(moves_per_depth[depth]);
+        for (int i = 1; i <= moves_per_depth[depth][0]; i++) {
+            uint32_t move = moves_per_depth[depth][i];
+            board.make_move<WHITE>(move);
+            if (depth > 1) {
+                hashPerft<!WHITE>(depth - 1);
+            }
+            tt.put(board.hashkey(), !WHITE, depth - 1);
+            board.unmake_move<WHITE>(move);
         }
     }
 }
@@ -130,6 +149,11 @@ void setup() {
 
 int main() {
     //setup<true>();
+    for (int i = 1; i < 20; i++) {
+        hashPerft<true>(i);
+        std::cout << "Position-perft " << i << " is: ";
+        tt.printInfo();
+    }
 
     for (int i = 0; i < 20; i++) {
         std::cout << "Perft " << i << " is: " << perft<true>(i) << std::endl;

@@ -1,7 +1,3 @@
-//
-// Created by kolja on 8/4/22.
-//
-
 #ifndef CHESSENDGAMES_PAWNBOARD_H
 #define CHESSENDGAMES_PAWNBOARD_H
 
@@ -18,13 +14,12 @@ public:
      * bit order: a2, b2, ..., h2, a3, ..., h7 from lowest to highest bit, i.e. & 1 gives a2 occupancy
      *     could in theory be changed for wider board; note en_passant code though
      */
-    uint64_t white_pieces = 0x1F;
-    uint64_t black_pieces = 0x1F0000000000;
+    uint64_t white_pieces = 0xFF;
+    uint64_t black_pieces = 0xFF0000000000;
 
 private:
     uint64_t all_pieces = white_pieces | black_pieces;
     bool to_move = true;
-    uint64_t hash;
 
     static constexpr int number_of_files = 8; // a to h are 8 for normal chess, note en_passant code if changed
     static constexpr uint64_t full_row = (1L << number_of_files) - 1;
@@ -32,6 +27,20 @@ private:
 
 
 public:
+    uint64_t hashkey() {
+        uint64_t smallKey = all_pieces;
+        uint64_t white = white_pieces, black = black_pieces;
+        for (int i = 0; i < 16; i++) {
+            smallKey <<= 1;
+            if (white != 0 && ffsl(white) < ffsl(black)) {
+                smallKey |= 1;
+                white &= ~(1 << (ffsl(white) - 1));
+            } else {
+                black &= ~(1 << (ffsl(black) - 1));
+            }
+        }
+        return smallKey;
+    }
 
     /**
      *
@@ -96,8 +105,15 @@ public:
         make_move<WHITE>(move); // ye, actually I think
     }
 
+    /**
+     *
+     * @tparam WHITE
+     * @param moves
+     * @return true if the player to move can win this move (in this case the moves array will be empty)
+     *      or false otherwise, in this case the moves array will contain all legal moves
+     */
     template<bool WHITE>
-    void generate_moves(std::array<uint32_t, 25>& moves) {
+    bool generate_moves(std::array<uint32_t, 25>& moves) {
         moves[0] = 0;
         if constexpr (WHITE) {
             uint64_t pieces = white_pieces;
@@ -137,6 +153,7 @@ public:
                 pieces &= ~(1L << pos);
             }
         }
+        return false;
     }
 };
 
